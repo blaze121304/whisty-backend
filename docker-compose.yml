@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  whiskey-backend:
+    image: whiskey-backend:latest
+    container_name: whiskey-backend
+    ports:
+      - "9091:9091"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: unless-stopped
