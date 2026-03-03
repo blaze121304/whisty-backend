@@ -5,7 +5,7 @@ services:
     image: whiskey-backend:latest
     container_name: whiskey-backend
     ports:
-      - "9091:9091"
+      - "10002:10002"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
     restart: unless-stopped
