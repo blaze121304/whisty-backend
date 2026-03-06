@@ -1,7 +1,7 @@
-package com.rusty.whiskeybackend.dto;
+package com.rusty.whiskeybackend.domain.dto;
 
-import com.rusty.whiskeybackend.domain.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.WhiskeySubCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

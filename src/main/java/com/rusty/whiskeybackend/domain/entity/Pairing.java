@@ -1,4 +1,4 @@
-package com.rusty.whiskeybackend.domain;
+package com.rusty.whiskeybackend.domain.entity;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;

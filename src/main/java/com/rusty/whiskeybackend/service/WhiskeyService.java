@@ -1,12 +1,12 @@
 package com.rusty.whiskeybackend.service;
 
-import com.rusty.whiskeybackend.domain.Pairing;
-import com.rusty.whiskeybackend.domain.Whiskey;
-import com.rusty.whiskeybackend.domain.WhiskeyCategory;
-import com.rusty.whiskeybackend.dto.PairingDto;
-import com.rusty.whiskeybackend.dto.WhiskeyRequestDto;
-import com.rusty.whiskeybackend.dto.WhiskeyResponseDto;
-import com.rusty.whiskeybackend.exception.ResourceNotFoundException;
+import com.rusty.whiskeybackend.domain.entity.Pairing;
+import com.rusty.whiskeybackend.domain.entity.Whiskey;
+import com.rusty.whiskeybackend.domain.dto.PairingDto;
+import com.rusty.whiskeybackend.domain.dto.WhiskeyRequestDto;
+import com.rusty.whiskeybackend.domain.dto.WhiskeyResponseDto;
+import com.rusty.whiskeybackend.common.exception.ResourceNotFoundException;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
 import com.rusty.whiskeybackend.repository.WhiskeyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,9 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -56,7 +54,7 @@ public class WhiskeyService {
     /**
      * ID로 위스키 조회
      */
-    public WhiskeyResponseDto findById(Long id) {
+    public WhiskeyResponseDto findById(String id) {
         Whiskey whiskey = whiskeyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("위스키를 찾을 수 없습니다. ID: " + id));
         return convertToResponseDto(whiskey);
@@ -83,7 +81,7 @@ public class WhiskeyService {
      * 위스키 수정
      */
     @Transactional
-    public WhiskeyResponseDto update(Long id, WhiskeyRequestDto requestDto, MultipartFile image) {
+    public WhiskeyResponseDto update(String id, WhiskeyRequestDto requestDto, MultipartFile image) {
         Whiskey whiskey = whiskeyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("위스키를 찾을 수 없습니다. ID: " + id));
 
@@ -112,7 +110,7 @@ public class WhiskeyService {
      * 위스키 삭제
      */
     @Transactional
-    public void delete(Long id) {
+    public void delete(String id) {
         Whiskey whiskey = whiskeyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("위스키를 찾을 수 없습니다. ID: " + id));
 
@@ -128,7 +126,7 @@ public class WhiskeyService {
      * 이미지 업로드
      */
     @Transactional
-    public String uploadImage(Long id, MultipartFile image) {
+    public String uploadImage(String id, MultipartFile image) {
         Whiskey whiskey = whiskeyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("위스키를 찾을 수 없습니다. ID: " + id));
 
@@ -149,7 +147,7 @@ public class WhiskeyService {
      * 이미지 삭제
      */
     @Transactional
-    public void deleteImage(Long id) {
+    public void deleteImage(String id) {
         Whiskey whiskey = whiskeyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("위스키를 찾을 수 없습니다. ID: " + id));
 
@@ -224,7 +222,7 @@ public class WhiskeyService {
                         .collect(Collectors.toList()) : List.of();
 
         return WhiskeyResponseDto.builder()
-                .id(whiskey.getId())
+                .id(whiskey.getEnglishName())
                 .name(whiskey.getName())
                 .englishName(whiskey.getEnglishName())
                 .brand(whiskey.getBrand())

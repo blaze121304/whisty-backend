@@ -1,4 +1,4 @@
-package com.rusty.whiskeybackend.domain;
+package com.rusty.whiskeybackend.domain.enums;
 
 public enum WhiskeyCategory {
     SINGLE_MALT,           // Single Malt

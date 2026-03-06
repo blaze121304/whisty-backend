@@ -1,11 +1,12 @@
-package com.rusty.whiskeybackend.domain;
+package com.rusty.whiskeybackend.domain.entity;
 
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
+import lombok.NoArgsConstructor;import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -21,14 +22,12 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Whiskey {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Column(nullable = false)
     private String name;                    // 위스키명 (필수)
 
-    private String englishName;             // 영문명 (선택)
+    @Id
+    @Column(nullable = false)
+    private String englishName;             // 영문명 (PK)
 
     @Column(nullable = false)
     private String brand;                   // 브랜드 (필수)

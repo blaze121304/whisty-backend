@@ -1,4 +1,4 @@
-package com.rusty.whiskeybackend.exception;
+package com.rusty.whiskeybackend.common.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

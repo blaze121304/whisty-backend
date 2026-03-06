@@ -1,9 +1,9 @@
-package com.rusty.whiskeybackend.config;
+package com.rusty.whiskeybackend.common.config;
 
-import com.rusty.whiskeybackend.domain.Pairing;
-import com.rusty.whiskeybackend.domain.Whiskey;
-import com.rusty.whiskeybackend.domain.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.WhiskeySubCategory;
+import com.rusty.whiskeybackend.domain.entity.Pairing;
+import com.rusty.whiskeybackend.domain.entity.Whiskey;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
 import com.rusty.whiskeybackend.repository.WhiskeyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+// @Component  // data.sql로 대체
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {

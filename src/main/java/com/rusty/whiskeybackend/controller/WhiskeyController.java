@@ -1,8 +1,8 @@
 package com.rusty.whiskeybackend.controller;
 
-import com.rusty.whiskeybackend.domain.WhiskeyCategory;
-import com.rusty.whiskeybackend.dto.WhiskeyRequestDto;
-import com.rusty.whiskeybackend.dto.WhiskeyResponseDto;
+import com.rusty.whiskeybackend.domain.dto.WhiskeyRequestDto;
+import com.rusty.whiskeybackend.domain.dto.WhiskeyResponseDto;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
 import com.rusty.whiskeybackend.service.WhiskeyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class WhiskeyController {
      * 위스키 상세 조회
      */
     @GetMapping("/{id}")
-    public ResponseEntity<WhiskeyResponseDto> getWhiskey(@PathVariable Long id) {
+    public ResponseEntity<WhiskeyResponseDto> getWhiskey(@PathVariable String id) {
         WhiskeyResponseDto whiskey = whiskeyService.findById(id);
         return ResponseEntity.ok(whiskey);
     }
@@ -62,7 +62,7 @@ public class WhiskeyController {
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<WhiskeyResponseDto> updateWhiskey(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @ModelAttribute WhiskeyRequestDto request,
             @RequestParam(required = false) MultipartFile image) {
         WhiskeyResponseDto whiskey = whiskeyService.update(id, request, image);
@@ -73,7 +73,7 @@ public class WhiskeyController {
      * 위스키 삭제
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWhiskey(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteWhiskey(@PathVariable String id) {
         whiskeyService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -83,7 +83,7 @@ public class WhiskeyController {
      */
     @PostMapping("/{id}/image")
     public ResponseEntity<Map<String, String>> uploadImage(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam MultipartFile image) {
         String imageUrl = whiskeyService.uploadImage(id, image);
         return ResponseEntity.ok(Map.of("imageDataUrl", imageUrl));
@@ -93,7 +93,7 @@ public class WhiskeyController {
      * 이미지 삭제
      */
     @DeleteMapping("/{id}/image")
-    public ResponseEntity<Void> deleteImage(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteImage(@PathVariable String id) {
         whiskeyService.deleteImage(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,4 +1,4 @@
-package com.rusty.whiskeybackend.dto;
+package com.rusty.whiskeybackend.domain.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.rusty.whiskeybackend.exception;
+package com.rusty.whiskeybackend.common.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
