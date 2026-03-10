@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   whiskey-backend:
-    image: whiskey-backend:latest
-    container_name: whiskey-backend
+    image: whisty-backend:latest
+    container_name: whisty-backend
     ports:
       - "10006:10006"
     environment:
