@@ -122,4 +122,12 @@ public class WhiskeyController {
         return ResponseEntity.ok(whiskeys);
     }
 
+    @GetMapping("/cafe24/oauth/callback")
+    public ResponseEntity<String> callback(
+            @RequestParam String code,
+            @RequestParam String state
+    ) {
+        return ResponseEntity.ok("code=" + code + ", state=" + state);
+    }
+
 }
