@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface WhiskeyRepository extends JpaRepository<Whiskey, String> {
+public interface WhiskeyRepository extends JpaRepository<Whiskey, Long> {
 
     // 카테고리별 조회
     Page<Whiskey> findByCategory(WhiskeyCategory category, Pageable pageable);

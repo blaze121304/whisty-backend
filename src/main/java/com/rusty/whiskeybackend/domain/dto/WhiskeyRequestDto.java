@@ -1,7 +1,7 @@
 package com.rusty.whiskeybackend.domain.dto;
 
 import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCharacteristic;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -28,24 +28,24 @@ public class WhiskeyRequestDto {
     @NotNull(message = "종류는 필수입니다.")
     private WhiskeyCategory category;
 
-    private List<WhiskeySubCategory> subCategories;  // 특성 (셰리, 피트, 버번)
+    private List<WhiskeyCharacteristic> characteristics;  // 특성 (셰리, 피트, 버번)
 
-    private Double abv;              // 알코올 도수 (%)
-    private Double volume;           // 용량 (ml)
+    private Double abv;
+    private Double volume;
 
-    private String nation;           // 국가
-    private String region;           // 생산지역
+    private String nation;
+    private String region;
 
-    private String imageDataUrl;     // 이미지 URL (Base64 또는 파일 경로)
-    private String notes;            // 테이스팅 노트
+    private String imageDataUrl;
+    private String notes;
 
-    private String nose;             // 노즈
-    private String palate;           // 팔레트
-    private String finish;           // 피니시
+    private String nose;
+    private String palate;
+    private String finish;
 
-    private String personalNote;     // 개인 소감
-    private Double starPoint;               // 별점
+    private String personalNote;
+    private Double starPoint;
 
-    private List<PairingDto> pairings;   // 페어링
-    private List<String> flavorTags;     // 테이스팅 프로파일 태그
+    private List<PairingDto> pairings;
+    private List<String> flavorTags;
 }

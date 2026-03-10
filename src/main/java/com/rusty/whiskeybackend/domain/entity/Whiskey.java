@@ -1,12 +1,13 @@
 package com.rusty.whiskeybackend.domain.entity;
 
 import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCharacteristic;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;import org.springframework.data.annotation.CreatedDate;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -22,12 +23,15 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Whiskey {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @Column(nullable = false)
     private String name;                    // 위스키명 (필수)
 
-    @Id
-    @Column(nullable = false)
-    private String englishName;             // 영문명 (PK)
+    @Column(unique = true)
+    private String englishName;             // 영문명 (UNIQUE)
 
     @Column(nullable = false)
     private String brand;                   // 브랜드 (필수)
@@ -38,12 +42,12 @@ public class Whiskey {
 
     @ElementCollection
     @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "whiskey_sub_categories", joinColumns = @JoinColumn(name = "whiskey_id"))
-    @Column(name = "sub_category")
+    @CollectionTable(name = "whiskey_characteristics", joinColumns = @JoinColumn(name = "whiskey_id"))
+    @Column(name = "characteristic")
     @Builder.Default
-    private List<WhiskeySubCategory> subCategories = new ArrayList<>();  // 특성 (셰리, 피트, 버번)
+    private List<WhiskeyCharacteristic> characteristics = new ArrayList<>();  // 특성 (셰리, 피트, 버번)
 
-    private Double abv;                     // 알코올 도수 (Alcohol By Volume, %)
+    private Double abv;                     // 알코올 도수 (%)
 
     private Double volume;                  // 용량 (ml)
 
@@ -52,9 +56,9 @@ public class Whiskey {
     private String region;                  // 생산지역
 
     @Column(length = 1000)
-    private String imageDataUrl;            // 이미지 URL (Base64 또는 파일 저장소 경로)
+    private String imageDataUrl;            // 이미지 URL
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String notes;                   // 테이스팅 노트
 
     @Column(length = 1000)
@@ -66,7 +70,7 @@ public class Whiskey {
     @Column(length = 1000)
     private String finish;                  // 피니시
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String personalNote;            // 개인 소감
 
     private Double starPoint;               // 별점
@@ -84,9 +88,9 @@ public class Whiskey {
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private Long createdAt;                 // 생성일시 (timestamp)
+    private Long createdAt;
 
     @LastModifiedDate
     @Column(nullable = false)
-    private Long updatedAt;                 // 수정일시 (timestamp)
+    private Long updatedAt;
 }

@@ -1,7 +1,7 @@
 package com.rusty.whiskeybackend.domain.dto;
 
 import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.enums.WhiskeySubCategory;
+import com.rusty.whiskeybackend.domain.enums.WhiskeyCharacteristic;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,12 +14,12 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class WhiskeyResponseDto {
-    private String id;
+    private Long id;
     private String name;
     private String englishName;
     private String brand;
     private WhiskeyCategory category;
-    private List<WhiskeySubCategory> subCategories;
+    private List<WhiskeyCharacteristic> characteristics;
     private Double abv;
     private Double volume;
     private String nation;
