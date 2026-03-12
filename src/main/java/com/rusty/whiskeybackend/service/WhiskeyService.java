@@ -7,8 +7,9 @@ import com.rusty.whiskeybackend.domain.dto.WhiskeyRequestDto;
 import com.rusty.whiskeybackend.domain.dto.WhiskeyResponseDto;
 import com.rusty.whiskeybackend.common.exception.ResourceNotFoundException;
 import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.enums.WhiskeyCharacteristic;
+import com.rusty.whiskeybackend.domain.specification.WhiskeySpecification;
 import com.rusty.whiskeybackend.repository.WhiskeyRepository;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,31 +34,13 @@ public class WhiskeyService {
     private final WhiskeyRepository whiskeyRepository;
     private static final String UPLOAD_DIR = "src/main/resources/uploads/images";
 
-    public Page<WhiskeyResponseDto> findAll(WhiskeyCategory category, WhiskeyCharacteristic characteristic, String search, Pageable pageable) {
-        Page<Whiskey> whiskeys;
-        boolean hasCategory = category != null;
-        boolean hasCharacteristic = characteristic != null;
-        boolean hasSearch = search != null && !search.isBlank();
-
-        if (hasCategory && hasCharacteristic && hasSearch) {
-            whiskeys = whiskeyRepository.findByCategoryAndCharacteristicAndSearch(category, characteristic, search, pageable);
-        } else if (hasCategory && hasCharacteristic) {
-            whiskeys = whiskeyRepository.findByCategoryAndCharacteristic(category, characteristic, pageable);
-        } else if (hasCategory && hasSearch) {
-            whiskeys = whiskeyRepository.findByCategoryAndSearch(category, search, pageable);
-        } else if (hasCharacteristic && hasSearch) {
-            whiskeys = whiskeyRepository.findByCharacteristicAndSearch(characteristic, search, pageable);
-        } else if (hasCategory) {
-            whiskeys = whiskeyRepository.findByCategory(category, pageable);
-        } else if (hasCharacteristic) {
-            whiskeys = whiskeyRepository.findByCharacteristic(characteristic, pageable);
-        } else if (hasSearch) {
-            whiskeys = whiskeyRepository.searchByNameOrBrand(search, pageable);
-        } else {
-            whiskeys = whiskeyRepository.findAll(pageable);
-        }
-
-        return whiskeys.map(this::convertToResponseDto);
+    public Page<WhiskeyResponseDto> findAll(String style, String cask, String nation, String search, Pageable pageable) {
+        Specification<Whiskey> spec = Specification
+                .where(WhiskeySpecification.hasStyle(style))
+                .and(WhiskeySpecification.hasCask(cask))
+                .and(WhiskeySpecification.hasNation(nation))
+                .and(WhiskeySpecification.hasSearch(search));
+        return whiskeyRepository.findAll(spec, pageable).map(this::convertToResponseDto);
     }
 
     public WhiskeyResponseDto findById(Long id) {

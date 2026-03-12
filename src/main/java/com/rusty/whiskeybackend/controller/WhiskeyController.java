@@ -2,8 +2,6 @@ package com.rusty.whiskeybackend.controller;
 
 import com.rusty.whiskeybackend.domain.dto.WhiskeyRequestDto;
 import com.rusty.whiskeybackend.domain.dto.WhiskeyResponseDto;
-import com.rusty.whiskeybackend.domain.enums.WhiskeyCategory;
-import com.rusty.whiskeybackend.domain.enums.WhiskeyCharacteristic;
 import com.rusty.whiskeybackend.service.WhiskeyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +26,12 @@ public class WhiskeyController {
 
     @GetMapping
     public ResponseEntity<Page<WhiskeyResponseDto>> getAllWhiskeys(
-            @RequestParam(required = false) WhiskeyCategory category,
-            @RequestParam(required = false) WhiskeyCharacteristic characteristic,
+            @RequestParam(required = false) String style,
+            @RequestParam(required = false) String cask,
+            @RequestParam(required = false) String nation,
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(whiskeyService.findAll(category, characteristic, search, pageable));
+        return ResponseEntity.ok(whiskeyService.findAll(style, cask, nation, search, pageable));
     }
 
     @GetMapping("/{id}")
@@ -72,23 +71,5 @@ public class WhiskeyController {
     public ResponseEntity<Void> deleteImage(@PathVariable Long id) {
         whiskeyService.deleteImage(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/category/{category}")
-    public ResponseEntity<Page<WhiskeyResponseDto>> getWhiskeysByCategory(
-            @PathVariable WhiskeyCategory category,
-            @RequestParam(required = false) WhiskeyCharacteristic characteristic,
-            @RequestParam(required = false) String search,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(whiskeyService.findAll(category, characteristic, search, pageable));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<Page<WhiskeyResponseDto>> searchWhiskeys(
-            @RequestParam String q,
-            @RequestParam(required = false) WhiskeyCategory category,
-            @RequestParam(required = false) WhiskeyCharacteristic characteristic,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(whiskeyService.findAll(category, characteristic, q, pageable));
     }
 }
