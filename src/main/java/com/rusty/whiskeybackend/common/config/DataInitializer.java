@@ -253,7 +253,7 @@ public class DataInitializer implements CommandLineRunner {
                 .englishName("Buffalo Trace Kentucky Straight Bourbon")
                 .brand("Buffalo Trace")
                 .category(WhiskeyCategory.GRAIN_BOURBON_RYE)
-                .characteristics(List.of(WhiskeyCharacteristic.BOURBON))
+                .characteristics(List.of())
                 .abv(45.0)
                 .volume(750.0)
                 .nation("미국")
