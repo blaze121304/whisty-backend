@@ -5,7 +5,8 @@
       "Bash(./mvnw spring-boot:run 2>&1)",
       "Bash(netstat -ano | grep \":10006\")",
       "Bash(taskkill /PID 17940 /F)",
-      "Bash(netstat -ano | grep \":10006\" | head -1)"
+      "Bash(netstat -ano | grep \":10006\" | head -1)",
+      "WebSearch"
     ]
   }
 }
