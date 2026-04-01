@@ -17,5 +17,5 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./src/main/resources/uploads/images:/app/src/main/resources/uploads/images
-      - /home/rusty/whiskey/whiskey-backend/keyfile.md:/app/keyfile.md
+      - /home/rusty/whiskey/whisty-backend/keyfile.md:/app/keyfile.md
     restart: unless-stopped
