@@ -18,7 +18,7 @@ public class WhiskeySpecification {
 
     private static final List<WhiskeyCharacteristic> MAIN_CASKS = List.of(
             WhiskeyCharacteristic.SHERRY, WhiskeyCharacteristic.BOURBON,
-            WhiskeyCharacteristic.WINE_PORT, WhiskeyCharacteristic.PEAT
+            WhiskeyCharacteristic.PEAT
     );
 
     private static final List<String> MAIN_NATIONS = List.of("스코틀랜드", "미국", "일본", "한국");
@@ -33,7 +33,7 @@ public class WhiskeySpecification {
         return (root, query, cb) -> cb.equal(root.get("category"), category);
     }
 
-    // 캐스크 필터 (SHERRY | BOURBON | WINE_PORT | PEAT | OTHER)
+    // 캐스크 필터 (SHERRY | BOURBON | PEAT | OTHER)
     public static Specification<Whiskey> hasCask(String cask) {
         if (cask == null) return null;
         if ("OTHER".equals(cask)) {
