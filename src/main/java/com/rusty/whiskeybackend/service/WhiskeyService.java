@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -154,7 +155,7 @@ public class WhiskeyService {
         whiskey.setEnglishName(dto.getEnglishName());
         whiskey.setBrand(dto.getBrand());
         whiskey.setCategory(dto.getCategory());
-        whiskey.setCharacteristics(dto.getCharacteristics() != null ? dto.getCharacteristics() : List.of());
+        whiskey.setCharacteristics(dto.getCharacteristics() != null ? new ArrayList<>(dto.getCharacteristics()) : new ArrayList<>());
         whiskey.setAbv(dto.getAbv());
         whiskey.setVolume(dto.getVolume());
         whiskey.setNation(dto.getNation());
@@ -166,13 +167,11 @@ public class WhiskeyService {
         whiskey.setPersonalNote(dto.getPersonalNote());
         whiskey.setStarPoint(dto.getStarPoint() != null ? dto.getStarPoint() : 0.0);
 
-        if (dto.getPairings() != null) {
-            whiskey.setPairings(dto.getPairings().stream()
-                    .map(p -> new Pairing(p.getIcon(), p.getName()))
-                    .collect(Collectors.toList()));
-        }
+        whiskey.setPairings(dto.getPairings() != null ? dto.getPairings().stream()
+                .map(p -> new Pairing(p.getIcon(), p.getName()))
+                .collect(Collectors.toList()) : new ArrayList<>());
 
-        whiskey.setFlavorTags(dto.getFlavorTags() != null ? dto.getFlavorTags() : List.of());
+        whiskey.setFlavorTags(dto.getFlavorTags() != null ? new ArrayList<>(dto.getFlavorTags()) : new ArrayList<>());
     }
 
     private WhiskeyResponseDto convertToResponseDto(Whiskey whiskey) {
