@@ -25,7 +25,9 @@ public class WhiskeySpecification {
 
     // 스타일 필터 (SINGLE_MALT | BLENDED | GRAIN_BOURBON_RYE | OTHER)
     public static Specification<Whiskey> hasStyle(String style) {
-        if (style == null) return null;
+        if (style == null) {
+            return (root, query, cb) -> root.get("category").in(MAIN_STYLES);
+        }
         if ("OTHER".equals(style)) {
             return (root, query, cb) -> cb.not(root.get("category").in(MAIN_STYLES));
         }
