@@ -1,12 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pkill -f \"whiskey-backend\" 2>/dev/null; sleep 2 && echo \"stopped\")",
-      "Bash(./mvnw spring-boot:run 2>&1)",
-      "Bash(netstat -ano | grep \":10006\")",
-      "Bash(taskkill /PID 17940 /F)",
-      "Bash(netstat -ano | grep \":10006\" | head -1)",
-      "WebSearch"
+      "Bash(./mvnw spring-boot:run*)",
+      "Bash(./mvnw clean package*)",
+      "Bash(./mvnw test*)",
+      "Bash(netstat -ano | grep \":10006\"*)",
+      "Bash(docker build*)",
+      "Bash(docker-compose*)",
+      "Bash(docker ps*)",
+      "Bash(docker logs*)",
+      "WebSearch",
+      "Bash(netstat -ano)",
+      "Bash(git *)"
     ]
   }
 }
