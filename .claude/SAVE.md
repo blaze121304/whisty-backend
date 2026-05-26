@@ -1,5 +1,5 @@
 # whisty-backend 프로젝트 분석 보고서
-> 작성일: 2026-05-26 | 최종 수정: 2026-05-26 | 버전: v1.1
+> 작성일: 2026-05-26 | 최종 수정: 2026-05-27 | 버전: v1.2
 
 ---
 
@@ -24,24 +24,24 @@ Next.js 프론트엔드(`:10007`)와 연동되며, 위스키 CRUD·이미지 업
 ```
 whisty-backend/
 ├── src/main/java/com/rusty/whiskeybackend/
-│   ├── WhiskeyBackendApplication.java   # 진입점
-│   ├── ServletInitializer.java          # WAR 배포용
+│   ├── WhiskeyBackendApplication.java
+│   ├── ServletInitializer.java
 │   ├── common/
 │   │   ├── config/
-│   │   │   ├── CorsConfig.java          # CORS + 정적 이미지 리소스 설정
+│   │   │   ├── CorsConfig.java
 │   │   │   ├── DataInitializer.java
-│   │   │   └── JpaConfig.java           # JPA Auditing 활성화
+│   │   │   └── JpaConfig.java
 │   │   └── exception/
-│   │       ├── GlobalExceptionHandler.java   # @RestControllerAdvice
+│   │       ├── GlobalExceptionHandler.java
 │   │       ├── ErrorResponse.java
 │   │       └── ResourceNotFoundException.java
 │   ├── controller/
-│   │   ├── WhiskeyController.java       # /api/whiskeys CRUD + 이미지
+│   │   ├── WhiskeyController.java
 │   │   └── HealthController.java
 │   ├── domain/
 │   │   ├── entity/
-│   │   │   ├── Whiskey.java             # 메인 엔티티
-│   │   │   └── Pairing.java             # @Embeddable
+│   │   │   ├── Whiskey.java
+│   │   │   └── Pairing.java
 │   │   ├── dto/
 │   │   │   ├── WhiskeyRequestDto.java
 │   │   │   ├── WhiskeyResponseDto.java
@@ -50,109 +50,64 @@ whisty-backend/
 │   │   │   ├── WhiskeyCategory.java
 │   │   │   └── WhiskeyCharacteristic.java
 │   │   └── specification/
-│   │       └── WhiskeySpecification.java  # JPA Specification 필터
+│   │       └── WhiskeySpecification.java
 │   ├── repository/
-│   │   └── WhiskeyRepository.java         # JpaRepository + JpaSpecificationExecutor
+│   │   └── WhiskeyRepository.java
 │   └── service/
 │       └── WhiskeyService.java
 ├── src/main/resources/
-│   ├── application.properties           # 개발 프로파일 (H2)
-│   ├── application-prod.properties      # 운영 프로파일 (MySQL, 환경변수)
-│   ├── schema-mysql.sql                 # MySQL 스키마 DDL
-│   ├── data.sql                         # 샘플 데이터 (10건)
-│   └── uploads/images/                  # 이미지 저장 디렉토리
-├── docs/
-│   └── api-frontend-guide.md            # 프론트엔드 연동 가이드
-├── BACKEND_API_SPEC.md                  # 초기 API 설계 문서
-├── Dockerfile                           # Multi-stage (maven → jre-alpine)
+│   ├── application.properties
+│   ├── application-prod.properties
+│   ├── schema-mysql.sql
+│   ├── data.sql
+│   └── uploads/images/
+├── Dockerfile
 ├── docker-compose.yml
 └── .claude/
     ├── CLAUDE.md
-    └── SAVE.md                          # (이 파일)
+    └── SAVE.md
 ```
 
 ---
 
 ## 3. 아키텍처
 
-### 레이어 구조
+### 실제 운영 구조 (2026-05-27 기준)
 
 ```
-┌──────────────────────────────────────────────────┐
-│  Next.js 프론트엔드 (:10007)                      │
-│  GET/POST/PUT/DELETE /api/whiskeys               │
-└──────────────────────┬───────────────────────────┘
-                       │ HTTP (CORS 허용)
-┌──────────────────────▼───────────────────────────┐
-│  WhiskeyController  (/api/whiskeys)              │
-│  HealthController   (/api/health)                │
-└──────────────────────┬───────────────────────────┘
-                       │
-┌──────────────────────▼───────────────────────────┐
-│  WhiskeyService                                  │
-│  - JPA Specification 조합 → findAll()            │
-│  - UUID 기반 이미지 파일 저장/삭제               │
-└───────────────┬──────────────────────────────────┘
-                │
-┌───────────────▼──────────────────────────────────┐
-│  WhiskeyRepository (JpaSpecificationExecutor)    │
-│  DB: H2 (dev) / MySQL (prod)                     │
-│  테이블: whiskey, whiskey_characteristics,       │
-│          whiskey_pairings, whiskey_flavor_tags   │
-└──────────────────────────────────────────────────┘
+브라우저
+  │
+  ├─ 페이지 로드: HTTPS → NPM(443) → whisty-react:10007
+  │
+  └─ API/이미지: HTTPS → NPM(443)
+                          ├─ /api/*   → whisty-backend:10006
+                          └─ /images/* → whisty-backend:10006
 ```
 
-### 요청 처리 흐름 (목록 조회)
+### NPM (Nginx Proxy Manager) 설정 — whisty.rusty.it.kr
 
+```nginx
+location /api/ {
+    proxy_pass http://192.168.0.206:10006;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location ^~ /images/ {
+    proxy_pass http://192.168.0.206:10006;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
 ```
-GET /api/whiskeys?style=SINGLE_MALT&cask=SHERRY&nation=스코틀랜드
-  └─ WhiskeyController.getAllWhiskeys()
-        └─ WhiskeyService.findAll(style, cask, nation, search, pageable)
-              └─ WhiskeySpecification.hasStyle() + hasCask() + hasNation() + hasSearch()
-                    └─ whiskeyRepository.findAll(spec, pageable)
-                          └─ Page<Whiskey> → convertToResponseDto() → Page<WhiskeyResponseDto>
-```
+
+> `^~` 수정자 필수 — NPM의 `assets.conf`가 `.jpg/.png` 등을 정규식으로 가로채므로
+> prefix 매칭이 정규식보다 우선순위를 갖도록 설정
 
 ---
 
 ## 4. 주요 모듈 상세
 
-### 4-1. `domain/entity/` — 데이터 레이어
-
-**Whiskey** (Entity, `@Table(name = "whiskey")`)
-
-| 필드 | 타입 | 제약 | 설명 |
-|------|------|------|------|
-| `id` | Long | PK, auto | 고유 ID |
-| `name` | String | NOT NULL | 위스키명 |
-| `englishName` | String | UNIQUE | 영문명 |
-| `brand` | String | NOT NULL | 브랜드 |
-| `category` | WhiskeyCategory | NOT NULL | 카테고리 Enum |
-| `characteristics` | List\<WhiskeyCharacteristic\> | @ElementCollection | 캐스크 특성 (복수) |
-| `abv` | Double | - | 알코올 도수 (%) |
-| `volume` | Double | - | 용량 (ml) |
-| `nation` | String | - | 국가 |
-| `region` | String | - | 생산지역 |
-| `imageDataUrl` | String | length=1000 | 이미지 경로 (`/images/xxx.jpg`) |
-| `notes` | String | TEXT | 테이스팅 노트 |
-| `nose` | String | length=1000 | 노즈 |
-| `palate` | String | length=1000 | 팔레트 |
-| `finish` | String | length=1000 | 피니시 |
-| `personalNote` | String | TEXT | 개인 소감 |
-| `starPoint` | Double | - | 별점 (기본 0.0) |
-| `pairings` | List\<Pairing\> | @ElementCollection | 페어링 목록 |
-| `flavorTags` | List\<String\> | @ElementCollection | 플레이버 태그 |
-| `createdAt` | Long | @CreatedDate | Unix timestamp (ms) |
-| `updatedAt` | Long | @LastModifiedDate | Unix timestamp (ms) |
-
-**Pairing** (`@Embeddable`, 테이블 `whiskey_pairings`)
-
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| `icon` | String | 이모지 아이콘 |
-| `name` | String | 페어링명 |
-
-### 4-2. `domain/enums/` — Enum 정의
+### 4-1. `domain/enums/` — Enum 정의
 
 **WhiskeyCategory**
 
@@ -173,80 +128,58 @@ GET /api/whiskeys?style=SINGLE_MALT&cask=SHERRY&nation=스코틀랜드
 | `SHERRY` | 셰리 캐스크 |
 | `PEAT` | 피트 |
 | `BOURBON` | 버번 캐스크 |
-| `WINE_PORT` | 와인/포트 캐스크 |
 
-### 4-3. `domain/specification/` — 필터링
+> ~~`WINE_PORT`~~ — 2026-05-27 제거. DB `whiskey_characteristics` 테이블에서도 삭제됨.
 
-**WhiskeySpecification** — JPA Criteria API 기반 동적 필터
+### 4-2. `domain/specification/WhiskeySpecification`
 
-| 메서드 | 파라미터 값 | 동작 |
-|--------|-------------|------|
-| `hasStyle(style)` | `SINGLE_MALT\|BLENDED\|GRAIN_BOURBON_RYE` | category 일치 |
-| `hasStyle(style)` | `OTHER` | MAIN_STYLES 외 나머지 |
-| `hasCask(cask)` | `SHERRY\|BOURBON\|WINE_PORT\|PEAT` | characteristics JOIN EXISTS |
-| `hasCask(cask)` | `OTHER` | 메인 캐스크 없는 위스키 (Subquery NOT EXISTS) |
-| `hasNation(nation)` | `스코틀랜드\|미국\|일본\|한국` | nation 일치 |
-| `hasNation(nation)` | `OTHER` | MAIN_NATIONS 외 + NULL |
-| `hasSearch(search)` | 검색어 | name OR brand LIKE (소문자 변환) |
+| 메서드 | 파라미터 | 동작 |
+|--------|----------|------|
+| `hasStyle(null)` | (전체) | **MAIN_STYLES만 반환** (위스키 전용 탭 기본값) |
+| `hasStyle("SINGLE_MALT")` 등 | 특정 카테고리 | 해당 카테고리만 |
+| `hasStyle("OTHER")` | 스피릿/기타 | MAIN_STYLES 외 나머지 (진/와인/사케 등) |
+| `hasCask(cask)` | `SHERRY\|BOURBON\|PEAT\|OTHER` | 캐스크 필터 |
+| `hasNation(nation)` | 국가명 또는 `OTHER` | 국가 필터 |
+| `hasSearch(search)` | 검색어 | name OR brand LIKE |
 
-- 모든 Specification은 `null` 반환 시 조건 없음 (전체)
-- 복수 조건은 `Specification.where().and()` 체이닝으로 AND 조합
+> **핵심 변경**: `style=null`(전체)이 이전에는 스피릿 포함 전체를 반환했으나,
+> 위스키 탭과 스피릿 탭 분리를 위해 MAIN_STYLES만 반환하도록 수정됨.
+> 스피릿/기타 탭은 반드시 `style=OTHER`로 호출해야 함.
 
-### 4-4. `service/WhiskeyService`
+**MAIN_STYLES**: `SINGLE_MALT`, `BLENDED`, `GRAIN_BOURBON_RYE`  
+**MAIN_CASKS**: `SHERRY`, `BOURBON`, `PEAT`
 
-- `UPLOAD_DIR = "src/main/resources/uploads/images"` — 이미지 로컬 저장
-- 이미지 파일명: `UUID.randomUUID() + 확장자`
-- `update()` 시 기존 이미지 파일 삭제 후 새 이미지 저장
-- `delete()` 시 이미지 파일도 함께 삭제
-- `starPoint` null 수신 시 0.0으로 저장
+### 4-3. `common/config/CorsConfig`
 
-### 4-5. `controller/WhiskeyController`
+```java
+.allowedOrigins(
+    "http://localhost:10007",
+    "http://192.168.0.206:10007",
+    "https://whisty.rusty.it.kr"   // 2026-05-27 추가
+)
+```
 
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| GET | `/api/whiskeys` | 목록 조회 (페이지, 필터) |
-| GET | `/api/whiskeys/{id}` | 상세 조회 |
-| POST | `/api/whiskeys` (multipart) | 위스키 생성 |
-| PUT | `/api/whiskeys/{id}` (multipart) | 위스키 수정 |
-| DELETE | `/api/whiskeys/{id}` | 위스키 삭제 |
-| POST | `/api/whiskeys/{id}/image` | 이미지 업로드 |
-| DELETE | `/api/whiskeys/{id}/image` | 이미지 삭제 |
+정적 이미지 서빙: `/images/**` → `file:src/main/resources/uploads/images/`
 
-**목록 조회 Query Parameters**
+### 4-4. `common/exception/GlobalExceptionHandler`
 
-| 파라미터 | 설명 | 기본값 |
-|---------|------|--------|
-| `style` | 스타일 필터 | - |
-| `cask` | 캐스크/풍미 필터 | - |
-| `nation` | 국가 필터 | - |
-| `search` | 이름/브랜드 검색 | - |
-| `page` | 페이지 번호 | 0 |
-| `size` | 페이지 크기 | 20 |
-| `sort` | 정렬 | `createdAt,desc` |
+`@Slf4j` 추가 (2026-05-27). 500 에러 시 스택트레이스 로깅:
+```java
+log.error("Unhandled exception at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+```
 
-### 4-6. `common/` — 공통 레이어
+### 4-5. `service/WhiskeyService` — 주요 수정사항
 
-**CorsConfig**
-- CORS 허용 오리진: `http://localhost:10007`, `http://192.168.0.206:10007`
-- 정적 이미지 서빙: `/images/**` → `file:src/main/resources/uploads/images/`
+**불변 컬렉션 버그 수정 (2026-05-27)**  
+`updateEntityFromDto`에서 `List.of()` 대신 `new ArrayList<>()`를 사용.  
+Hibernate merge 시 `.clear()` 호출로 `UnsupportedOperationException` 발생했던 문제 해결.
 
-**GlobalExceptionHandler** (`@RestControllerAdvice`)
+```java
+// 수정 전 (버그)
+whiskey.setCharacteristics(dto.getCharacteristics() != null ? dto.getCharacteristics() : List.of());
 
-| 예외 | HTTP 상태 |
-|------|-----------|
-| `ResourceNotFoundException` | 404 Not Found |
-| `MethodArgumentNotValidException` | 400 Bad Request (Validation) |
-| `Exception` | 500 Internal Server Error |
-
-**에러 응답 형식**
-```json
-{
-  "timestamp": "2026-05-26T10:00:00",
-  "status": 404,
-  "error": "Not Found",
-  "message": "위스키를 찾을 수 없습니다. ID: 999",
-  "path": "/api/whiskeys/999"
-}
+// 수정 후
+whiskey.setCharacteristics(dto.getCharacteristics() != null ? new ArrayList<>(dto.getCharacteristics()) : new ArrayList<>());
 ```
 
 ---
@@ -255,10 +188,7 @@ GET /api/whiskeys?style=SINGLE_MALT&cask=SHERRY&nation=스코틀랜드
 
 | 항목 | 개발 (default) | 운영 (prod) |
 |------|----------------|-------------|
-| DB | H2 in-memory (`jdbc:h2:mem:whiskeydb`) | MySQL (환경변수 주입) |
-| DDL | `none` (schema-h2.sql 수동 실행) | `none` |
-| SQL Init | `always` | `never` |
-| SQL Logging | `show-sql=true` | `show-sql=false` |
+| DB | H2 in-memory | MySQL (환경변수 주입) |
 | 포트 | `10006` | `10006` |
 
 **운영 환경변수** (docker-compose.yml)
@@ -270,159 +200,84 @@ GET /api/whiskeys?style=SINGLE_MALT&cask=SHERRY&nation=스코틀랜드
 | `DB_PORT` | `3306` |
 | `DB_NAME` | `whiskeydb` |
 | `DB_USERNAME` | `rusty` |
-| `DB_PASSWORD` | (docker-compose.yml 참조) |
-
-**H2 Console** (개발): `http://localhost:10006/h2-console`
 
 ---
 
 ## 6. DB 스키마 (MySQL)
 
 ```
-whiskey                      (id, name, english_name, brand, category, abv, volume,
-                               nation, region, image_data_url, notes, nose, palate,
-                               finish, personal_note, star_point, created_at, updated_at)
-whiskey_characteristics      (whiskey_id FK, characteristic ENUM)
-whiskey_pairings             (whiskey_id FK, icon, name)
-whiskey_flavor_tags          (whiskey_id FK, flavor_tag)
+whiskey                  (id, name, english_name, brand, category, abv, volume,
+                           nation, region, image_data_url, notes, nose, palate,
+                           finish, personal_note, star_point, created_at, updated_at)
+whiskey_characteristics  (whiskey_id FK, characteristic ENUM('SHERRY','PEAT','BOURBON'))
+whiskey_pairings         (whiskey_id FK, icon, name)
+whiskey_flavor_tags      (whiskey_id FK, flavor_tag)
 ```
 
-**주의**: `schema-mysql.sql`의 `category` ENUM에 `WORLD_WHISKEY`가 있으나 Java Enum에는 없음.  
-실제 코드 기준 카테고리는 `WhiskeyCategory.java` 참고. MySQL ENUM 수정 필요 시 ALTER TABLE 필요.
+> `whiskey_characteristics`의 characteristic 컬럼 ENUM: `WINE_PORT` 제거됨.
+> MySQL ALTER 필요 시: `ALTER TABLE whiskey_characteristics MODIFY characteristic ENUM('SHERRY','PEAT','BOURBON');`
 
 ---
 
-## 7. 의존성
+## 7. 배포
 
-```
-spring-boot-starter-web               # REST API
-spring-boot-starter-data-jpa          # ORM
-spring-boot-starter-validation        # @Valid, @NotBlank 등
-spring-boot-starter-hateoas           # HATEOAS (현재 미활용)
-spring-boot-starter-actuator          # /actuator 헬스체크
-springdoc-openapi-starter-webmvc-ui:2.8.14  # Swagger UI
-h2:runtime                            # 개발 DB
-mysql-connector-j:runtime             # 운영 DB
-lombok                                # 보일러플레이트 제거
-spring-boot-devtools:runtime          # 개발용 자동 재시작
-```
+### 서버 구조
 
----
+| 컨테이너 | 포트 | 역할 |
+|---------|------|------|
+| `npm` | 80, 443 | Nginx Proxy Manager (SSL + 라우팅) |
+| `whisty-react-whisty-react-1` | 10007 | Next.js 프론트엔드 |
+| `whisty-backend` | 10006 | Spring Boot 백엔드 |
+| `infrastructure-mysql` | 3306 | MySQL DB |
 
-## 8. 배포
+### 배포 스크립트
 
-### Docker 빌드 & 실행
+- 백엔드: `/home/rusty/bin/whiskey-backend.deploy.sh`
+  - `git fetch && git reset --hard origin/master` → Docker 빌드 → 재시작
+- 프론트엔드: `/home/rusty/bin/whisty-react.deploy.sh`
+  - `git fetch && git reset --hard origin/main` → Docker 빌드(`--build-arg NEXT_PUBLIC_API_BASE_URL=https://whisty.rusty.it.kr/api`) → Portainer에서 Stack 업데이트
 
-```powershell
-# 이미지 빌드
-docker build -t whisty-backend:latest .
+### 이미지 저장 경로
 
-# docker-compose 실행 (운영)
-docker-compose up -d
-```
-
-### docker-compose 볼륨 마운트
-
-| 컨테이너 경로 | 호스트 경로 | 목적 |
-|--------------|------------|------|
-| `/app/src/main/resources/uploads/images` | `./src/main/resources/uploads/images` | 이미지 영속 보관 |
-| `/app/keyfile.md` | `/home/rusty/whiskey/whisty-backend/keyfile.md` | 키파일 |
+| 위치 | 경로 |
+|------|------|
+| 호스트 | `/home/rusty/whiskey/whisty-backend/src/main/resources/uploads/images/` |
+| 컨테이너 | `/app/src/main/resources/uploads/images/` |
+| API 서빙 | `/images/{uuid}.{ext}` |
+| 볼륨 마운트 | `docker-compose.yml` 참조 |
 
 ### 접속 정보
 
 | 환경 | URL |
 |------|-----|
-| 로컬 개발 | `http://localhost:10006` |
-| 내부망 운영 | `http://192.168.0.206:10006` |
-| Swagger UI | `http://localhost:10006/swagger-ui/index.html` |
-| H2 Console | `http://localhost:10006/h2-console` (dev 프로파일만) |
+| 외부 도메인 | `https://whisty.rusty.it.kr` |
+| 내부망 프론트 | `http://192.168.0.206:10007` |
+| 내부망 백엔드 API | `http://192.168.0.206:10006` |
+| NPM 관리 UI | `http://192.168.0.206:81` |
 
 ---
 
-## 9. 샘플 데이터 (data.sql — 10건)
+## 8. 프론트엔드 연동 (whisty-react)
 
-| 이름 | 카테고리 | 특성 | 국가 |
-|------|---------|------|------|
-| 더 글렌리벳 12년 | SINGLE_MALT | SHERRY | 스코틀랜드 |
-| 라프로익 10년 | SINGLE_MALT | PEAT | 스코틀랜드 |
-| 맥캘란 12년 셰리오크 | SINGLE_MALT | - | 스코틀랜드 |
-| 조니워커 블랙 라벨 | BLENDED | - | 스코틀랜드 |
-| 야마자키 12년 | WORLD_WHISKEY* | - | 일본 |
-| 버팔로 트레이스 | WORLD_WHISKEY* | - | 미국 |
-| 탱커레이 런던 드라이 진 | GIN_VODKA | - | 영국 |
-| 샤또 마고 2015 | WINE_LIQUEUR | - | 프랑스 |
-| 다이긴조 준마이 | SAKE_TRADITIONAL | - | 일본 |
-| 기네스 드래프트 | BEER_SOJU | - | 영국 |
+- 소스 경로 (서버): `/home/rusty/whiskey/whisty-react/`
+- API Base URL: `process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.0.206:10006/api'`
+- 빌드 시 `--build-arg NEXT_PUBLIC_API_BASE_URL=https://whisty.rusty.it.kr/api` 주입
+- `NEXT_PUBLIC_*` 변수는 **빌드 타임**에 바인딩됨 → 변경 시 이미지 재빌드 필수
 
-> *data.sql의 야마자키/버팔로는 `WORLD_WHISKEY`로 삽입되어 있음 (현재 Java Enum에 없는 값). 실제 운영 DB는 `api-frontend-guide.md` 기준 수정 반영됨.
+**프론트엔드 주의사항:**
+- 캐스크 필터: `SHERRY` / `BOURBON` / `PEAT` / `OTHER` (WINE_PORT 제거됨)
+- 위스키 탭 "전체": `style` 파라미터 생략 또는 null → 위스키만 반환
+- 스피릿/기타 탭 "전체": 반드시 `style=OTHER`로 호출
+- 이미지 URL: DB의 `/images/{파일명}` → `https://whisty.rusty.it.kr/images/{파일명}`으로 조합
 
 ---
 
-## 10. 확장 포인트
+## 9. 알려진 이슈 및 해결 이력
 
-### 새 필터 조건 추가
-
-1. `WhiskeySpecification`에 `Specification<Whiskey>` 메서드 추가
-2. `WhiskeyService.findAll()` 파라미터 및 체이닝 추가
-3. `WhiskeyController.getAllWhiskeys()` `@RequestParam` 추가
-
-### DB 스키마 변경
-
-1. `Whiskey.java`에 필드 추가
-2. `schema-mysql.sql` ALTER TABLE 작성 (운영 수동 실행)
-3. 개발 H2: `schema-h2.sql` 수정
-
-### 인증 추가 (현재 미구현)
-
-현재 단일 사용자 가정, 인증 없음. JWT 추가 시 Spring Security 의존성 필요.
-
----
-
-## 11. 현재 이슈 (2026-05-26 조사 중)
-
-### 증상
-`https://whisty.rusty.it.kr` 접속 시 위스키 리스트 미표시.  
-`http://192.168.0.206:10007` 내부 IP 직접 접속 시에는 정상 표시.
-
-### 브라우저 콘솔 에러
-```
-Mixed Content: The page at 'https://whisty.rusty.it.kr/' was loaded over HTTPS,
-but requested an insecure resource 'http://192.168.0.206:10006/api/whiskeys?size=500'.
-
-Access to fetch at 'http://192.168.0.206:10006/api/whiskeys?size=500' from origin
-'https://whisty.rusty.it.kr' has been blocked by CORS policy.
-```
-
-### 원인 분석
-
-| 원인 | 설명 |
-|------|------|
-| **Mixed Content** | 프론트엔드가 HTTPS로 서빙되지만 API URL이 `http://192.168.0.206:10006` (HTTP) |
-| **CORS 오리진 누락** | `CorsConfig.java`에 `https://whisty.rusty.it.kr`가 허용 오리진에 없음 |
-| **API URL 미변경** | 프론트엔드 API Base URL이 내부 IP 그대로 남아있음 |
-
-- 이전에는 프론트엔드가 `http://192.168.0.206:10007` (HTTP)로 접속해서 정상 동작했음
-- 도메인(`whisty.rusty.it.kr`) 배포 이후 nginx가 HTTP → HTTPS 리다이렉트하면서 문제 발생
-- `CorsConfig.java`에는 `https://whisty.rusty.it.kr`가 한 번도 추가된 적 없음 (git 이력 확인)
-
-### 해결 방향 (미완료)
-
-**필요한 작업:**
-1. **nginx 설정**: 기존 `whisty.rusty.it.kr` nginx 설정에 `/api` → `localhost:10006` 프록시 추가
-2. **CorsConfig.java 수정**: `https://whisty.rusty.it.kr` 추가
-3. **프론트엔드 API URL 변경**: `http://192.168.0.206:10006` → `https://whisty.rusty.it.kr`
-
-**현재 서버 상황 파악 중:**
-- 서버 OS: Linux (`root@rusty-linux`)
-- nginx sites-enabled: `openmediavault-webgui` (OMV, 포트 8088)만 존재
-- `whisty.rusty.it.kr` 도메인의 HTTPS 처리 주체 미파악 (Cloudflare Tunnel 또는 별도 nginx 가능성)
-- 다음 확인 필요: `ss -tlnp | grep -E ':80|:443'` 및 `ps aux | grep -E 'nginx|caddy|cloudflared'`
-
-### 프로세스 구조
-- 실제 현재 구조:
-- 브라우저 → NPM(443) → whisty-react:10007    (HTML/JS 다운로드)
-- 브라우저(JS 실행) → http://192.168.0.206:10006/api   ← 브라우저가 직접 차단
-
-- 실제 목표 구조:
-- 브라우저 → NPM(443) → whisty-react:10007    (HTML/JS 다운로드)
-- 브라우저(JS 실행) → https://whisty.rusty.it.kr/api → NPM(443) → whisty-backend:10006
+| 날짜 | 이슈 | 해결 |
+|------|------|------|
+| 2026-05-27 | HTTPS에서 위스키 리스트 미표시 (Mixed Content + CORS) | NPM `/api`, `/images` 프록시 추가 + CorsConfig 오리진 추가 + 프론트 재빌드 |
+| 2026-05-27 | `/images/` HTTPS 접근 시 Next.js 404 반환 | NPM location에 `^~` 수정자 추가 (assets.conf 정규식 우선순위 우회) |
+| 2026-05-27 | 위스키 수정(PUT) 시 500 에러 | `updateEntityFromDto`에서 `List.of()` → `new ArrayList<>()` 수정 |
+| 2026-05-27 | `style=null` 전체 조회 시 스피릿 포함 | `hasStyle(null)` → MAIN_STYLES 필터 적용 |
+| 2026-05-27 | WINE_PORT 캐스크 필터 제거 | enum 삭제 + DB 레코드 삭제 |
