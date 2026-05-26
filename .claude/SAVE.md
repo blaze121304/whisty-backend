@@ -417,3 +417,12 @@ Access to fetch at 'http://192.168.0.206:10006/api/whiskeys?size=500' from origi
 - nginx sites-enabled: `openmediavault-webgui` (OMV, 포트 8088)만 존재
 - `whisty.rusty.it.kr` 도메인의 HTTPS 처리 주체 미파악 (Cloudflare Tunnel 또는 별도 nginx 가능성)
 - 다음 확인 필요: `ss -tlnp | grep -E ':80|:443'` 및 `ps aux | grep -E 'nginx|caddy|cloudflared'`
+
+### 프로세스 구조
+- 실제 현재 구조:
+- 브라우저 → NPM(443) → whisty-react:10007    (HTML/JS 다운로드)
+- 브라우저(JS 실행) → http://192.168.0.206:10006/api   ← 브라우저가 직접 차단
+
+- 실제 목표 구조:
+- 브라우저 → NPM(443) → whisty-react:10007    (HTML/JS 다운로드)
+- 브라우저(JS 실행) → https://whisty.rusty.it.kr/api → NPM(443) → whisty-backend:10006
